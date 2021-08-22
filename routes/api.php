@@ -55,7 +55,7 @@ Route::post('despesa/create-categoria', [CategoriaController::class, 'store']);
 Route::post('create-usuario', [UsuarioController::class, 'store']);
 Route::post('user/confirm-login', [UsuarioController::class, 'login']);
 Route::post('dashboard/filter/{id}', [DespesaController::class, 'filterDashboard']);
-Route::post('dashboard/filter-line', [DespesaController::class, 'filterDashboardLine']);
+Route::post('dashboard/filter-line/{id}', [DespesaController::class, 'filterDashboardLine']);
 Route::post('despesas-filter/{id}', [DespesaController::class, 'filterIndex']);
 
 Route::delete('despesas/delete/{id}', [DespesaController::class, 'destroy']);

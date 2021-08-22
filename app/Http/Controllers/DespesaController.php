@@ -18,13 +18,28 @@ class DespesaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+
+    public function filterIndex(Request $request) {
+        try {
+            $filter = $request->all();
+            return $this->index(22, $filter);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'status' => $e->status]);
+        }
+    }
+
+    public function index($id, $filter = null)
     {
         $despesa = new DespesasModel();
 
         $data = DespesasModel::with(['formaPagamento', 'fornecedor'])
-        ->whereIn('ID_USUARIO', [$id])
-        ->get();
+         ->join('despesa_detalhes', 'despesa_detalhes.ID_DESPESA', '=', 'despesa.id')
+        ->where('despesa.ID_USUARIO','=' ,$id);
+
+        if ($filter) {
+            $data = $this->addFilter($data, $filter);
+        }
+        $data = $data->get();
 
         return response()->json(['data' => $data]);
     }
@@ -44,6 +59,7 @@ class DespesaController extends Controller
             $request = DB::table('despesa_detalhes')
             ->join('despesa', 'despesa.id', '=', 'ID_DESPESA')
             ->join('formas_pagamento', 'formas_pagamento.id', '=', 'ID_FORMA_PAGAMENTO')
+            ->leftJoin('categoria', 'categoria.id', '=', 'ID_CATEGORIA')
             ->select( 
                 DB::raw("CONCAT(MONTH(despesa_detalhes.data_vencimento), '-', YEAR(despesa_detalhes.data_vencimento)) AS MES_ANO"),
                 DB::raw('ROUND(AVG(formas_pagamento.SALDO_LIMITE),2) AS LIMITE'), 
@@ -78,7 +94,7 @@ class DespesaController extends Controller
             ->join('despesa', 'despesa.id', '=', 'ID_DESPESA')
             ->join('formas_pagamento', 'formas_pagamento.id', '=', 'ID_FORMA_PAGAMENTO')
             ->join('fornecedor', 'fornecedor.id', '=', 'ID_FORNECEDOR')
-            ->join('categoria', 'categoria.id', '=', 'ID_CATEGORIA')
+            ->leftJoin('categoria', 'categoria.id', '=', 'ID_CATEGORIA')
             ->select(
             'formas_pagamento.DESCRICAO as forma_pagamento', 'formas_pagamento.saldo_limite', 'despesa_detalhes.id',
              DB::raw('SUM(despesa_detalhes.VALOR_PARCELA) as despesas'))
@@ -235,8 +251,6 @@ class DespesaController extends Controller
             $despesaDt = new DespesaDetalheController();
 
             $dataRequest = $request->all();
-
-            // dd($dataRequest);
             
             $despesa = DespesasModel::create($dataRequest);
             $detalhes = $despesaDt->storeDespesasDetalhes($request);

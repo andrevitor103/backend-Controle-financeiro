@@ -73,7 +73,6 @@ class DespesaController extends Controller
     function dashboardLimiteDespesas($id, $filter = null)
     {
         try {
-            //$request = DespesasModel::with(['detalhes', 'formaPagamento'])->get();
             
             $request = DB::table('despesa_detalhes')
             ->join('despesa', 'despesa.id', '=', 'ID_DESPESA')
@@ -91,7 +90,8 @@ class DespesaController extends Controller
             }
             
             $request = $request
-                        ->groupBy('despesa.ID_FORMA_PAGAMENTO')
+ 
+            ->groupBy('despesa.ID_FORMA_PAGAMENTO')
                         // ->toSql();
                         ->get();
             return response()->json(['Dashboard' => $request]);
@@ -130,7 +130,7 @@ class DespesaController extends Controller
              "data_pagamento" => [
                 "table" => "despesa_detalhes",
                 "field" => "DATA_PAGAMENTO",
-                "operation" => "<="
+                "operation" => ">="
             ],
              "data_pagamento_ate" => [
                 "table" => "despesa_detalhes",
@@ -155,10 +155,11 @@ class DespesaController extends Controller
     public function addFilter($query, $filters) {
 
         $searchKeyFilter = array_keys($filters);
+        
         array_map(function ($labelFilter) use ($query, $filters) {
             $newfilter = $this->getFilterSearch($labelFilter, $this->listFilter());
             $values =  $filters[$labelFilter];
-             if($newfilter != null && $values != null) {
+             if($newfilter != null && $values[0] != null) {
                 $query = $this->filterQuery($query, $newfilter, $values);
             }    
         }, $searchKeyFilter);
@@ -168,12 +169,12 @@ class DespesaController extends Controller
 
     public function filterQuery($query, $filter, $values) {
         $values = explode(",",  $values[0]);
-        
+
         try {
-            if ($filter["operation"] == "notNull" && $values == 1) {
+            if ($filter["operation"] == "notNull") {
                 return $query->whereNotNull($filter["table"].".".$filter["field"]); 
             }
-            else if ($filter["operation"] == "null" && $values == 0) {
+            else if ($filter["operation"] == "null") {
                 return $query->whereNull($filter["table"].".".$filter["field"]); 
             }
             if ($filter["operation"] == "in") {
@@ -191,9 +192,9 @@ class DespesaController extends Controller
         return $listFilters[$searchFilter] ?? null;
     }
     
-    public function filterDashboard(Request $request) {
+    public function filterDashboard($userId = 1, Request $request) {
         $filter = $request->all();
-        return $this->dashboardLimiteDespesas(1, $filter);
+        return $this->dashboardLimiteDespesas($userId, $filter);
         return response()->json(['filter' => $filter]);
     }
 

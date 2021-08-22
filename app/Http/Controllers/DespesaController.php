@@ -235,10 +235,12 @@ class DespesaController extends Controller
             $despesaDt = new DespesaDetalheController();
 
             $dataRequest = $request->all();
+
+            // dd($dataRequest);
             
             $despesa = DespesasModel::create($dataRequest);
             $detalhes = $despesaDt->storeDespesasDetalhes($request);
-        
+            
             $detalhes = $despesa->detalhes()->createMany($detalhes);
         
             return response()->json(['Despesa_main' => $dataRequest, 'detalhes' => $detalhes]);

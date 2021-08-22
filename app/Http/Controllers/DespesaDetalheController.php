@@ -50,13 +50,15 @@ class DespesaDetalheController extends Controller
 
     function storeDespesasDetalhes(Request $request)
     {
+       $request["VALOR_DESPESA"] = $request["VALOR_DESPESA"] - $request["DESCONTO"];
+       
        $detalhes = $request->except( 'ID_CATEGORIA', 'ID_CONDICAOPAGAMENTO', 'JUROS_ATRASO', 'DESCONTO', 'ID_FORMA_PAGAMENTO', 'ID_USUARIO');
        $detalhesNew = [];
        $detalhesNew['DIA_FATURA'] = $this->getInvoiceClosingDay($detalhes['ID_FORNECEDOR'])->DATA_COBRANCA ?? 1;
        $detalhesNew['DATA_VENCIMENTO'] = $detalhes['DATA_COMPRA']; 
        $detalhesNew['VALOR_PARCELA'] =  ($detalhes['VALOR_DESPESA']/$detalhes['TOTAL_PARCELAS']);
        $detalhesNew = array_merge($detalhesNew, $detalhes);
-       
+        
        return $this->mountedStoreDespesasDetalhes($detalhesNew);
 
     //    return response()->json(['despesaDt' => $detalhesNew]);
@@ -78,13 +80,27 @@ class DespesaDetalheController extends Controller
             for($i = 0; $i < $parcelas; $i++)
             {
               $despesa['DATA_VENCIMENTO'] = strtotime($despesa['DATA_VENCIMENTO']);
-              $despesa['DATA_VENCIMENTO'] = $this->generateDueDate($despesa['DATA_VENCIMENTO'], 30, $despesa['DIA_FATURA']);
+
+              if ($i == 0) {
+                  $despesa['DATA_VENCIMENTO'] = $this->verifyDateInitionPagamento($despesa);
+              } else {
+                $despesa['DATA_VENCIMENTO'] = $this->generateDueDate($despesa['DATA_VENCIMENTO'], 30, $despesa['DIA_FATURA']);
+              }
               $despesa['NUMERO_PARCELA'] = $i+1;
               $dados[] = $despesa;
             }
         }
         
         return $dados;
+    }
+
+    function verifyDateInitionPagamento($despesa) {
+        if ($despesa["DIA_FATURA"] >= date('d', strtotime($despesa['DATA_VENCIMENTO']))) {
+                $despesa['DATA_VENCIMENTO'] = $this->generateDueDate($despesa['DATA_VENCIMENTO'], 0, $despesa['DIA_FATURA']);
+              } else {
+                 $despesa['DATA_VENCIMENTO'] = $this->generateDueDate($despesa['DATA_VENCIMENTO'], 30, $despesa['DIA_FATURA']);
+              }
+              return $despesa['DATA_VENCIMENTO'];
     }
 
     function generateDueDate($dayAdd, $dataBase = null, $dayDue)

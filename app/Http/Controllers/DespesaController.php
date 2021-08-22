@@ -44,10 +44,10 @@ class DespesaController extends Controller
         return response()->json(['data' => $data]);
     }
 
-    function filterDashboardLine(Request $request) {
+    function filterDashboardLine($userId = 1, Request $request) {
         try {
              $filter = $request->all();
-             return $this->dashboardGastosDespesas(1, $filter);
+             return $this->dashboardGastosDespesas($userId, $filter);
         } catch (Exception $e) {
             return response()->json(['Dashboard_error' => $e->getMessage()]);
         }
@@ -65,7 +65,8 @@ class DespesaController extends Controller
                 DB::raw('ROUND(AVG(formas_pagamento.SALDO_LIMITE),2) AS LIMITE'), 
                 DB::raw('SUM(VALOR_PARCELA) AS GASTOS'), 
                 DB::raw("ROUND(AVG(formas_pagamento.SALDO_LIMITE) - SUM(VALOR_PARCELA),2) AS `SALDO`"),
-            );
+            )
+            ->where('despesa.ID_USUARIO', '=', $id);
            
              if ($filter) 
             {   

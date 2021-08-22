@@ -42,6 +42,7 @@ class DespesaController extends Controller
         $data = $data->get();
 
         return response()->json(['data' => $data]);
+        
     }
 
     function filterDashboardLine(Request $request) {

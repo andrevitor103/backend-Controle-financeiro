@@ -19,10 +19,10 @@ class DespesaController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function filterIndex(Request $request) {
+    public function filterIndex($id, Request $request) {
         try {
             $filter = $request->all();
-            return $this->index(22, $filter);
+            return $this->index($id, $filter);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => $e->status]);
         }

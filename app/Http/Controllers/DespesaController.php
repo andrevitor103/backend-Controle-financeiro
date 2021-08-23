@@ -176,16 +176,21 @@ class DespesaController extends Controller
         array_map(function ($labelFilter) use ($query, $filters) {
             $newfilter = $this->getFilterSearch($labelFilter, $this->listFilter());
             $values =  $filters[$labelFilter];
-             if($newfilter != null && $values[0] != null) {
-                $query = $this->filterQuery($query, $newfilter, $values);
+            if (isset($values[0])) {
+                if($newfilter != null && $values[0] != null) {
+                    $query = $this->filterQuery($query, $newfilter, $values);
             }    
+            }
         }, $searchKeyFilter);
 
         return $query;
     }
 
     public function filterQuery($query, $filter, $values) {
-        $values = explode(",",  $values[0]);
+       
+        if (isset($values[0])) {
+            $values = explode(",",  $values[0]);
+        }
 
         try {
             if ($filter["operation"] == "notNull") {

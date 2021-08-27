@@ -19,26 +19,55 @@ class DespesaController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function filterIndex($id, Request $request) {
+    public function filterDespesaMain($id, Request $request) {
         try {
             $filter = $request->all();
-            return $this->index($id, $filter);
+            return $this->despesasInfo($id, $filter);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => $e->status]);
         }
     }
 
-    public function index($id, $filter = null)
+     public function despesasInfo($id, $filter = null)
+    {
+        try {
+
+            /*$data = DespesasModel::with(['formaPagamento', 'fornecedor', 'detalhes'])
+            ->whereIn('ID_USUARIO', [$id]);*/
+ 		$data = DB::table('despesa_detalhes')
+	            ->join('despesa', 'despesa.id', '=', 'ID_DESPESA')
+	            ->join('formas_pagamento', 'formas_pagamento.id', '=', 'ID_FORMA_PAGAMENTO')
+		    ->join('fornecedor', 'fornecedor.id', '=', 'ID_FORNECEDOR')	
+	            ->leftJoin('categoria', 'categoria.id', '=', 'ID_CATEGORIA')
+	            ->select("formas_pagamento.DESCRICAO", "fornecedor.RAZAO_SOCIAL", 
+			     "despesa_detalhes.VALOR_PARCELA", "despesa_detalhes.NUMERO_PARCELA",
+			     "despesa_detalhes.DATA_VENCIMENTO", "despesa_detalhes.JUROS",
+			     "despesa_detalhes.DESCONTO", "despesa_detalhes.DATA_PAGAMENTO",
+			     "despesa_detalhes.id", "despesa.ID_CATEGORIA"
+			)	
+	            ->where('despesa.ID_USUARIO', '=', $id);
+
+             if ($filter) {
+                $data = $this->addFilter($data, $filter);
+            }
+            //$data = $data->toSql();
+            $data = $data->get();
+	    
+            return response()->json(['detalhes_despesas' => $data]);
+            
+        } catch (Exception $e) {
+            return response()->json(['error', $e->getMessage(), 'status' => $e->status]);
+        }
+    }
+    
+
+    public function index($id)
     {
         $despesa = new DespesasModel();
 
         $data = DespesasModel::with(['formaPagamento', 'fornecedor'])
-         ->join('despesa_detalhes', 'despesa_detalhes.ID_DESPESA', '=', 'despesa.id')
         ->where('despesa.ID_USUARIO','=' ,$id);
 
-        if ($filter) {
-            $data = $this->addFilter($data, $filter);
-        }
         $data = $data->get();
 
         return response()->json(['data' => $data]);
@@ -154,16 +183,12 @@ class DespesaController extends Controller
                 "field" => "DATA_PAGAMENTO",
                 "operation" => "<="
             ],
-             "pagas" => [
+            "status" => [
                 "table" => "despesa_detalhes",
                 "field" => "DATA_PAGAMENTO",
-                "operation" => "notNull"
-            ],
-             "abertas" => [
-                "table" => "despesa_detalhes",
-                "field" => "DATA_PAGAMENTO",
-                "operation" => "null"
-            ],
+                "operation" => "notNull",
+                "isStatus" => "status",
+            ]
     ];
         return $filters;
     }
@@ -179,7 +204,7 @@ class DespesaController extends Controller
             if (isset($values[0])) {
                 if($newfilter != null && $values[0] != null) {
                     $query = $this->filterQuery($query, $newfilter, $values);
-            }    
+            }
             }
         }, $searchKeyFilter);
 
@@ -188,22 +213,23 @@ class DespesaController extends Controller
 
     public function filterQuery($query, $filter, $values) {
        
-        if (isset($values[0])) {
+     
             $values = explode(",",  $values[0]);
-        }
-
+        
+	
         try {
-            if ($filter["operation"] == "notNull") {
-                return $query->whereNotNull($filter["table"].".".$filter["field"]); 
+            if (@$filter["isStatus"]) {
+                if ($values[0] == 1 || $values[0] == "1") {
+                    return $query->whereNotNull($filter["table"].".".$filter["field"]);
+                } else {
+                    return $query->whereNull($filter["table"].".".$filter["field"]); 
+                }
             }
-            else if ($filter["operation"] == "null") {
-                return $query->whereNull($filter["table"].".".$filter["field"]); 
-            }
+            
             if ($filter["operation"] == "in") {
                 return $query->whereIn($filter["table"].".".$filter["field"], $values); 
-            } else {
-                return $query->where($filter["table"].".".$filter["field"], $filter["operation"], $values);
             }
+            return $query->where($filter["table"].".".$filter["field"], $filter["operation"], $values);
         } catch (Exception $e) {
             return $e->getMessage();
         }   
@@ -220,20 +246,6 @@ class DespesaController extends Controller
         return response()->json(['filter' => $filter]);
     }
 
-    public function despesasInfo($id)
-    {
-        try {
-            $data = DespesasModel::with(['formaPagamento', 'fornecedor', 'detalhes'])
-            ->whereIn('ID_USUARIO', [$id])
-            ->get();
-
-            return response()->json(['detalhes_despesas' => $data]);
-            
-        } catch (Exception $e) {
-            return response()->json(['error', $e->getMessage(), 'status' => $e->status]);
-        }
-    }
-    
 
     public function filterTable(Request $request)
     {

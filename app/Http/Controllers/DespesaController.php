@@ -69,9 +69,7 @@ class DespesaController extends Controller
         ->where('despesa.ID_USUARIO','=' ,$id);
 
         $data = $data->get();
-
-        echo 'teste';
-        //return response()->json(['data' => $data, 'teste' => 'testee']);
+        return response()->json(['data' => $data]);
     }
 
     function filterDashboardLine($userId = 1, Request $request) {

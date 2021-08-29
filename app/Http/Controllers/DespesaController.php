@@ -70,7 +70,8 @@ class DespesaController extends Controller
 
         $data = $data->get();
 
-        return response()->json(['data' => $data]);
+        echo 'teste';
+        return response()->json(['data' => $data, 'teste' => 'testee']);
     }
 
     function filterDashboardLine($userId = 1, Request $request) {

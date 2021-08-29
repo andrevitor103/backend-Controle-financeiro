@@ -30,8 +30,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::get('teste', function()
 {
-   echo 'Óla mundo';
-
+    return response->json(["teste" => "teste"]);
 });
 
 Route::get('despesas/{id}', [DespesaController::class, 'index']);
